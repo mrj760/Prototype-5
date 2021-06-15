@@ -16,11 +16,41 @@ public class GameManager : MonoBehaviour
     // player score
     public int score = 0, lives;
     // Text elements for player score and whether the game is over
-    public TextMeshProUGUI scoreText, livesText, tripleMeatText;
-    [SerializeField] private GameObject gameoverUI, titleScreenUI, pauseUI;
+    public TextMeshProUGUI scoreText, livesText, tripleMeatText, oldScoreText, newScoreText;
+    [SerializeField] private GameObject gameoverUI, titleScreenUI, pauseUI, highScoreUI;
+    [SerializeField] private TMP_InputField nameInput;
     public bool gameOver = false, spawning = false, paused = false;
     private AudioSource audsc;
     public AudioClip gameOverAud;
+    
+    // Difficulty determined by which button was pressed at the title screen ...
+    public void SetDifficulty(Difficulty difficulty)
+    {
+        diff = difficulty;
+        switch (difficulty)
+        {
+            case Difficulty.Easy:
+                minSpawnRate = .5f;
+                maxSpawnRate = 1.5f;
+                lives = 5;
+                break;
+            case Difficulty.Medium:
+                minSpawnRate = .25f;
+                maxSpawnRate = 1.2f;
+                lives = 3;
+                break;
+            case Difficulty.Hard:
+                minSpawnRate = .1f;
+                maxSpawnRate = 1f;
+                lives = 2;
+                break;
+            default:
+                Debug.Log("Invalid difficulty");
+                break;
+        }
+    }
+
+    private Difficulty diff;
 
     private void Awake()
     {
@@ -29,6 +59,7 @@ public class GameManager : MonoBehaviour
 
     private void Start()
     {
+        Cursor.visible = true;
         float vol = DataManager.GetVolume();
         audsc.volume = vol;
         foreach (var vs in volumeSliders)
@@ -54,7 +85,7 @@ public class GameManager : MonoBehaviour
      *  Targets hidden when paused .
      *  Cursor visible when paused .
      */
-    private void PauseSwitch()
+    public void PauseSwitch()
     {
         if (!spawning) return;
         paused = !pauseUI.activeInHierarchy ;
@@ -76,32 +107,6 @@ public class GameManager : MonoBehaviour
     public enum Difficulty
     {
         Easy, Medium, Hard
-    }
-    
-    // Difficulty determined by which button was pressed at the title screen ...
-    public void SetDifficulty(Difficulty difficulty)
-    {
-        switch (difficulty)
-        {
-            case Difficulty.Easy:
-                minSpawnRate = .5f;
-                maxSpawnRate = 1.5f;
-                lives = 5;
-                break;
-            case Difficulty.Medium:
-                minSpawnRate = .25f;
-                maxSpawnRate = 1.2f;
-                lives = 3;
-                break;
-            case Difficulty.Hard:
-                minSpawnRate = .1f;
-                maxSpawnRate = 1f;
-                lives = 2;
-                break;
-            default:
-                Debug.Log("Invalid difficulty");
-                break;
-        }
     }
 
     // Start spawning Targets and Check whether they're in bounds every half second...
@@ -206,11 +211,21 @@ public class GameManager : MonoBehaviour
     // Brings up the Game Over UI. Game manager stops running its ...
     public void GameOver()
     {
+        if (score > DataManager.GetHighScore(diff))
+        {
+            highScoreUI.SetActive(true);
+            oldScoreText.text = "Previous Score: " + DataManager.GetHighScoreHolder(diff) + " -> " +
+                                DataManager.GetHighScore(diff);
+            newScoreText.text = "Your Score: " + score;
+        }
+        else
+        {
+            gameoverUI.SetActive(true);
+        }
         audsc.PlayOneShot(gameOverAud);
-        gameoverUI.SetActive(true);
         gameOver = true;
         spawning = false;
-        Cursor.lockState = CursorLockMode.None;
+        Cursor.lockState = CursorLockMode.Confined;
         Cursor.visible = true;
     }
 
@@ -247,5 +262,11 @@ public class GameManager : MonoBehaviour
     public void PlayOneShot(AudioClip clip)
     {
         audsc.PlayOneShot(clip);
+    }
+
+    public void SetHighScore()
+    {
+        DataManager.UpdateScore(diff, score, nameInput.text);
+        RestartGame();
     }
 }

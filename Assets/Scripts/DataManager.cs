@@ -60,22 +60,56 @@ public class DataManager : MonoBehaviour
     {
         return instance.volume;
     }
-    public static void UpdateScore(GameManager.Difficulty diff, int score)
+    public static void UpdateScore(GameManager.Difficulty diff, int score, string name)
     {
         switch (diff)
         {
             case GameManager.Difficulty.Easy:
                 instance.easyHighScore = score;
+                instance.easyName = name;
                 break;
             case GameManager.Difficulty.Medium:
                 instance.mediumHighScore = score;
+                instance.mediumName = name;
                 break;
             case GameManager.Difficulty.Hard:
                 instance.hardHighScore = score;
+                instance.hardName = name;
                 break;
             default:
                 Debug.Log("Invalid Difficulty to save score");
                 break;
+        }
+    }
+    public static int GetHighScore(GameManager.Difficulty diff)
+    {
+        switch (diff)
+        {
+            case GameManager.Difficulty.Easy:
+                return instance.easyHighScore;
+            case GameManager.Difficulty.Medium:
+                return instance.mediumHighScore;
+            case GameManager.Difficulty.Hard:
+                return instance.hardHighScore;
+            default:
+                Debug.Log("Invalid Difficulty: DataManager -> GetHighScore()");
+                return -1;
+        }
+    }
+    
+    public static string GetHighScoreHolder(GameManager.Difficulty diff)
+    {
+        switch (diff)
+        {
+            case GameManager.Difficulty.Easy:
+                return instance.easyName;
+            case GameManager.Difficulty.Medium:
+                return instance.mediumName;
+            case GameManager.Difficulty.Hard:
+                return instance.hardName;
+            default:
+                Debug.Log("Invalid Difficulty: DataManager -> GetHighScore()");
+                return "null";
         }
     }
     public static void Save()
