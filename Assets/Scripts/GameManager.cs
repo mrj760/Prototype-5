@@ -18,7 +18,6 @@ public class GameManager : MonoBehaviour
     // Text elements for player score and whether the game is over
     public TextMeshProUGUI scoreText, livesText, tripleMeatText;
     [SerializeField] private GameObject gameoverUI, titleScreenUI, pauseUI;
-    private bool fixVolume=false;
     public bool gameOver = false, spawning = false, paused = false;
     private AudioSource audsc;
     public AudioClip gameOverAud;
@@ -30,7 +29,12 @@ public class GameManager : MonoBehaviour
 
     private void Start()
     {
-        // DontDestroyOnLoad(gameObject);
+        float vol = DataManager.GetVolume();
+        audsc.volume = vol;
+        foreach (var vs in volumeSliders)
+        {
+            vs.GetComponent<Slider>().value = vol;
+        }
     }
 
     private void Update()
@@ -39,19 +43,6 @@ public class GameManager : MonoBehaviour
         if (Input.GetKeyDown(KeyCode.Space))
         {
             PauseSwitch();
-        }
-    }
-
-    private void LateUpdate()
-    {
-        if (fixVolume)
-        {
-            foreach (GameObject go in volumeSliders)
-            {
-                Slider s = go.GetComponent<Slider>();
-                s.value = audsc.volume;
-                fixVolume = false;
-            }
         }
     }
     
@@ -75,6 +66,10 @@ public class GameManager : MonoBehaviour
         }
         Cursor.visible = paused;
         Swiper.Instance().PauseTR(paused);
+        if (paused)
+        {
+            DataManager.Save();
+        }
     }
 
     // Difficulty settings ...
@@ -126,6 +121,8 @@ public class GameManager : MonoBehaviour
         InvokeRepeating(nameof(CheckBounds), 0f, .5f);
         
         UpdateScore(0);
+        
+        DataManager.Save();
     }
     
     // Checks all on screen targets for if they're in bounds on Y pos. Game over if good target falls... 
@@ -219,6 +216,7 @@ public class GameManager : MonoBehaviour
 
     public void RestartGame()
     {
+        DataManager.Save();
         SceneManager.LoadScene(SceneManager.GetActiveScene().name);
     }
 
@@ -237,7 +235,13 @@ public class GameManager : MonoBehaviour
     public void SetVolume(float volume)
     {
         audsc.volume = volume;
-        fixVolume = true;
+        foreach (GameObject go in volumeSliders)
+        {
+            Slider s = go.GetComponent<Slider>();
+            s.value = audsc.volume;
+        }
+
+        DataManager.UpdateVolume(volume);
     }
 
     public void PlayOneShot(AudioClip clip)
